@@ -20,7 +20,7 @@ import {
   BarChart,
   Bar,
 } from "recharts"
-import { Activity, Users, TrendingUp, Award, Zap, Package } from "lucide-react"
+import { Activity, Users, TrendingUp, Award, Zap, Package, BookOpen, Twitter, FileText, Github } from "lucide-react"
 
 interface User {
   user_address: string
@@ -108,10 +108,10 @@ const mintTrendData = [
 ]
 
 const distributionData = [
-  { name: "1-2 Mints", value: 45, color: "hsl(var(--chart-1))" },
-  { name: "3-5 Mints", value: 32, color: "hsl(var(--chart-2))" },
-  { name: "6-10 Mints", value: 18, color: "hsl(var(--chart-3))" },
-  { name: "10+ Mints", value: 5, color: "hsl(var(--chart-4))" },
+  { name: "1-2 Mints", value: 45, color: "#3b82f6" },
+  { name: "3-5 Mints", value: 32, color: "#10b981" },
+  { name: "6-10 Mints", value: 18, color: "#f59e0b" },
+  { name: "10+ Mints", value: 5, color: "#ef4444" },
 ]
 
 export default function Dashboard() {
@@ -215,19 +215,45 @@ export default function Dashboard() {
     fetchApiData("/users")
   }, [])
 
-  const currentUsers = apiData.users || userData
-  const currentCollections = apiData.collections || apiData.stats?.collections || []
-  const totalMints = apiData.stats?.total || currentUsers.reduce((sum, user) => sum + user.total_mints, 0)
-  const totalUsers = currentUsers.length
-  const avgMintsPerUser = totalUsers > 0 ? (totalMints / totalUsers).toFixed(1) : "0"
-  const totalCollections = currentCollections.length
+  const currentUsers = Array.isArray(apiData.users) ? apiData.users : Array.isArray(userData) ? userData : []
+  const currentCollections = Array.isArray(apiData.collections)
+    ? apiData.collections
+    : Array.isArray(apiData.stats?.collections)
+      ? apiData.stats.collections
+      : []
 
-  // Safe chart data transformations with proper null checks
-  const safeCollectionsData = currentCollections.length > 0 ? currentCollections.slice(0, 6) : []
-  const safeDistributionData = distributionData.map((item) => ({
-    ...item,
-    label: item.name, // Ensure label property exists
-  }))
+  const totalMints =
+    apiData.stats?.total ||
+    (currentUsers.length > 0 ? currentUsers.reduce((sum, user) => sum + (user?.total_mints || 0), 0) : 0)
+
+  const totalUsers = currentUsers.length || 0
+  const avgMintsPerUser = totalUsers > 0 && totalMints > 0 ? (totalMints / totalUsers).toFixed(1) : "0"
+  const totalCollections = currentCollections.length || 0
+
+  const safeCollectionsData =
+    Array.isArray(currentCollections) && currentCollections.length > 0
+      ? currentCollections
+          .slice(0, 6)
+          .filter((collection) => collection && collection.name && typeof collection.supply === "number")
+      : []
+
+  const safeDistributionData = Array.isArray(distributionData) ? distributionData : []
+  const safeMintTrendData = Array.isArray(mintTrendData) ? mintTrendData : []
+
+  const chartConfig = {
+    supply: {
+      color: "#3b82f6",
+    },
+    mints: {
+      color: "#3b82f6",
+    },
+    users: {
+      color: "#10b981",
+    },
+    value: {
+      color: "#3b82f6",
+    },
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -244,28 +270,96 @@ export default function Dashboard() {
                 <p className="text-sm text-muted-foreground">Certification Indexer Dashboard</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  fetchApiData("/stats")
-                  fetchApiData("/collections")
-                  fetchApiData("/users")
-                }}
-                disabled={loading}
-              >
-                {loading ? "Loading..." : "Refresh All"}
-              </Button>
-              <Badge
-                variant={apiError ? "destructive" : "secondary"}
-                className={apiError ? "" : "bg-accent/10 text-accent-foreground"}
-              >
-                {apiError ? "API Error" : "Live"}
-              </Badge>
-              {lastUpdated && (
-                <span className="text-xs text-muted-foreground">Updated: {lastUpdated.toLocaleTimeString()}</span>
-              )}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <a
+                  href="https://blueshift.gg/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 hover:bg-primary/20 transition-all duration-300 border border-primary/20 hover:border-primary/40"
+                  style={{
+                    boxShadow: "0 0 20px rgba(59, 130, 246, 0.3)",
+                    filter: "drop-shadow(0 0 8px rgba(59, 130, 246, 0.4))",
+                  }}
+                >
+                  <BookOpen className="h-4 w-4 text-primary group-hover:text-primary/80 transition-colors" />
+                  <span className="text-sm font-medium text-primary group-hover:text-primary/80 transition-colors">
+                    Learn
+                  </span>
+                </a>
+
+                <a
+                  href="https://x.com/blueshift_gg"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-2 px-3 py-2 rounded-lg bg-accent/10 hover:bg-accent/20 transition-all duration-300 border border-accent/20 hover:border-accent/40"
+                  style={{
+                    boxShadow: "0 0 20px rgba(16, 185, 129, 0.3)",
+                    filter: "drop-shadow(0 0 8px rgba(16, 185, 129, 0.4))",
+                  }}
+                >
+                  <Twitter className="h-4 w-4 text-accent group-hover:text-accent/80 transition-colors" />
+                  <span className="text-sm font-medium text-accent group-hover:text-accent/80 transition-colors">
+                    Follow
+                  </span>
+                </a>
+
+                <a
+                  href="https://github.com/metasal1/blueshift-api-dashboard"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-2 px-3 py-2 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 transition-all duration-300 border border-purple-500/20 hover:border-purple-500/40"
+                  style={{
+                    boxShadow: "0 0 20px rgba(168, 85, 247, 0.3)",
+                    filter: "drop-shadow(0 0 8px rgba(168, 85, 247, 0.4))",
+                  }}
+                >
+                  <Github className="h-4 w-4 text-purple-500 group-hover:text-purple-400 transition-colors" />
+                  <span className="text-sm font-medium text-purple-500 group-hover:text-purple-400 transition-colors">
+                    GitHub
+                  </span>
+                </a>
+
+                <a
+                  href="https://index.blueshift.gg/docs"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-2 px-3 py-2 rounded-lg bg-chart-3/10 hover:bg-chart-3/20 transition-all duration-300 border border-chart-3/20 hover:border-chart-3/40"
+                  style={{
+                    boxShadow: "0 0 20px rgba(245, 158, 11, 0.3)",
+                    filter: "drop-shadow(0 0 8px rgba(245, 158, 11, 0.4))",
+                  }}
+                >
+                  <FileText className="h-4 w-4 text-chart-3 group-hover:text-chart-3/80 transition-colors" />
+                  <span className="text-sm font-medium text-chart-3 group-hover:text-chart-3/80 transition-colors">
+                    API Docs
+                  </span>
+                </a>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    fetchApiData("/stats")
+                    fetchApiData("/collections")
+                    fetchApiData("/users")
+                  }}
+                  disabled={loading}
+                >
+                  {loading ? "Loading..." : "Refresh All"}
+                </Button>
+                <Badge
+                  variant={apiError ? "destructive" : "secondary"}
+                  className={apiError ? "" : "bg-accent/10 text-accent-foreground"}
+                >
+                  {apiError ? "API Error" : "Live"}
+                </Badge>
+                {lastUpdated && (
+                  <span className="text-xs text-muted-foreground">Updated: {lastUpdated.toLocaleTimeString()}</span>
+                )}
+              </div>
             </div>
           </div>
           {apiError && (
@@ -347,34 +441,32 @@ export default function Dashboard() {
                   <CardDescription>Mint supply across collections</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {/* Conditional rendering for chart data */}
                   {safeCollectionsData.length > 0 ? (
-                    <ChartContainer
-                      config={{
-                        supply: { label: "Supply", color: "hsl(var(--chart-1))" },
-                      }}
-                      className="h-[300px]"
-                    >
+                    <ChartContainer config={chartConfig} className="h-[300px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={safeCollectionsData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
                           <XAxis
                             dataKey="name"
-                            stroke="hsl(var(--muted-foreground))"
+                            stroke="#6b7280"
                             fontSize={12}
                             angle={-45}
                             textAnchor="end"
                             height={80}
                           />
-                          <YAxis stroke="hsl(var(--muted-foreground))" />
+                          <YAxis stroke="#6b7280" />
                           <ChartTooltip content={<ChartTooltipContent />} />
-                          <Bar dataKey="supply" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="supply" fill="#3b82f6" radius={[4, 4, 0, 0]} stroke="#2563eb" strokeWidth={2} />
                         </BarChart>
                       </ResponsiveContainer>
                     </ChartContainer>
                   ) : (
                     <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                      <p>No collection data available</p>
+                      <div className="text-center">
+                        <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No collection data available</p>
+                        {loading && <p className="text-xs mt-2">Loading...</p>}
+                      </div>
                     </div>
                   )}
                 </CardContent>
@@ -387,40 +479,52 @@ export default function Dashboard() {
                   <CardDescription>User distribution by mint count</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ChartContainer
-                    config={{
-                      value: { label: "Users", color: "hsl(var(--chart-1))" },
-                    }}
-                    className="h-[300px]"
-                  >
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={safeDistributionData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={60}
-                          outerRadius={120}
-                          paddingAngle={5}
-                          dataKey="value"
-                        >
-                          {/* Safe mapping with proper key handling */}
-                          {safeDistributionData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                  <div className="grid grid-cols-2 gap-2 mt-4">
-                    {safeDistributionData.map((item, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                        <span className="text-sm text-muted-foreground">{item.name}</span>
+                  {safeDistributionData.length > 0 ? (
+                    <>
+                      <ChartContainer config={chartConfig} className="h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={safeDistributionData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={60}
+                              outerRadius={120}
+                              paddingAngle={5}
+                              dataKey="value"
+                              stroke="#ffffff"
+                              strokeWidth={3}
+                            >
+                              {safeDistributionData.map((entry, index) => (
+                                <Cell
+                                  key={`cell-${index}`}
+                                  fill={entry?.color || "#3b82f6"}
+                                  stroke="#ffffff"
+                                  strokeWidth={2}
+                                />
+                              ))}
+                            </Pie>
+                            <ChartTooltip content={<ChartTooltipContent />} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </ChartContainer>
+                      <div className="grid grid-cols-2 gap-2 mt-4">
+                        {safeDistributionData.map((item, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <div
+                              className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
+                              style={{ backgroundColor: item?.color || "#3b82f6" }}
+                            />
+                            <span className="text-sm font-medium text-foreground">{item?.name || "Unknown"}</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </>
+                  ) : (
+                    <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                      <p>No distribution data available</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -436,48 +540,56 @@ export default function Dashboard() {
                 <CardDescription>All collections with their mint supply and details</CardDescription>
               </CardHeader>
               <CardContent>
-                {/* Conditional rendering for collections */}
                 {currentCollections.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {currentCollections.map((collection, index) => (
-                      <div
-                        key={collection.address}
-                        className="p-4 rounded-lg border border-border/50 hover:bg-accent/5 transition-colors"
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary font-bold text-sm">
-                              #{index + 1}
+                    {currentCollections.map((collection, index) => {
+                      if (!collection || !collection.address || !collection.name) {
+                        return null
+                      }
+
+                      const supply = collection.supply || 0
+                      const maxSupply = Math.max(...currentCollections.map((c) => c?.supply || 0))
+                      const percentage = totalMints > 0 ? ((supply / totalMints) * 100).toFixed(1) : "0"
+
+                      return (
+                        <div
+                          key={collection.address}
+                          className="p-4 rounded-lg border border-border/50 hover:bg-accent/5 transition-colors"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary font-bold text-sm">
+                                #{index + 1}
+                              </div>
+                              <div>
+                                <h3 className="font-semibold text-foreground">{collection.name}</h3>
+                                <p className="text-xs text-muted-foreground font-mono">
+                                  {collection.address.slice(0, 8)}...{collection.address.slice(-4)}
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <h3 className="font-semibold text-foreground">{collection.name}</h3>
-                              <p className="text-xs text-muted-foreground font-mono">
-                                {collection.address.slice(0, 8)}...{collection.address.slice(-4)}
-                              </p>
-                            </div>
+                            <Badge variant="secondary" className="bg-accent/10 text-accent-foreground">
+                              {supply} mints
+                            </Badge>
                           </div>
-                          <Badge variant="secondary" className="bg-accent/10 text-accent-foreground">
-                            {collection.supply} mints
-                          </Badge>
+                          <div className="w-full bg-muted rounded-full h-2">
+                            <div
+                              className="bg-primary h-2 rounded-full transition-all duration-300"
+                              style={{
+                                width: `${maxSupply > 0 ? Math.min((supply / maxSupply) * 100, 100) : 0}%`,
+                              }}
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-2">{percentage}% of total supply</p>
                         </div>
-                        <div className="w-full bg-muted rounded-full h-2">
-                          <div
-                            className="bg-primary h-2 rounded-full transition-all duration-300"
-                            style={{
-                              width: `${Math.min((collection.supply / Math.max(...currentCollections.map((c) => c.supply))) * 100, 100)}%`,
-                            }}
-                          />
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          {totalMints > 0 ? ((collection.supply / totalMints) * 100).toFixed(1) : "0"}% of total supply
-                        </p>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p>No collections data available</p>
+                    {loading && <p className="text-xs mt-2">Loading...</p>}
                   </div>
                 )}
               </CardContent>
@@ -495,39 +607,57 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {currentUsers.slice(0, 8).map((user, index) => (
-                    <div
-                      key={user.user_address}
-                      className="flex items-center justify-between p-4 rounded-lg border border-border/50 hover:bg-accent/5 transition-colors"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm">
-                          #{index + 1}
+                  {currentUsers.length > 0 ? (
+                    currentUsers.slice(0, 8).map((user, index) => {
+                      if (!user || !user.user_address) {
+                        return null
+                      }
+
+                      const totalMints = user.total_mints || 0
+                      const firstMintDate = user.first_mint_date ? new Date(user.first_mint_date) : new Date()
+                      const lastMintDate = user.last_mint_date ? new Date(user.last_mint_date) : new Date()
+
+                      return (
+                        <div
+                          key={user.user_address}
+                          className="flex items-center justify-between p-4 rounded-lg border border-border/50 hover:bg-accent/5 transition-colors"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm">
+                              #{index + 1}
+                            </div>
+                            <Avatar className="h-10 w-10">
+                              <AvatarFallback className="bg-accent/20 text-accent-foreground">
+                                {user.user_address.slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium text-foreground font-mono text-sm">
+                                {user.user_address.slice(0, 8)}...{user.user_address.slice(-4)}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                Active since {firstMintDate.toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <Badge variant="secondary" className="bg-primary/10 text-primary">
+                              {totalMints} mints
+                            </Badge>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Last: {lastMintDate.toLocaleDateString()}
+                            </p>
+                          </div>
                         </div>
-                        <Avatar className="h-10 w-10">
-                          <AvatarFallback className="bg-accent/20 text-accent-foreground">
-                            {user.user_address.slice(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium text-foreground font-mono text-sm">
-                            {user.user_address.slice(0, 8)}...{user.user_address.slice(-4)}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Active since {new Date(user.first_mint_date).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <Badge variant="secondary" className="bg-primary/10 text-primary">
-                          {user.total_mints} mints
-                        </Badge>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Last: {new Date(user.last_mint_date).toLocaleDateString()}
-                        </p>
-                      </div>
+                      )
+                    })
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No user data available</p>
+                      {loading && <p className="text-xs mt-2">Loading...</p>}
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -540,28 +670,45 @@ export default function Dashboard() {
                 <CardDescription>Detailed mint activity over time</CardDescription>
               </CardHeader>
               <CardContent>
-                <ChartContainer
-                  config={{
-                    mints: { label: "Total Mints", color: "hsl(var(--chart-1))" },
-                  }}
-                  className="h-[400px]"
-                >
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={mintTrendData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
-                      <YAxis stroke="hsl(var(--muted-foreground))" />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Line
-                        type="monotone"
-                        dataKey="mints"
-                        stroke="hsl(var(--chart-1))"
-                        strokeWidth={3}
-                        dot={{ fill: "hsl(var(--chart-1))", strokeWidth: 2, r: 6 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
+                {safeMintTrendData.length > 0 ? (
+                  <ChartContainer config={chartConfig} className="h-[400px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={safeMintTrendData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+                        <XAxis dataKey="month" stroke="#6b7280" />
+                        <YAxis stroke="#6b7280" />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Line
+                          type="monotone"
+                          dataKey="mints"
+                          stroke="#3b82f6"
+                          strokeWidth={4}
+                          dot={{
+                            fill: "#3b82f6",
+                            stroke: "#ffffff",
+                            strokeWidth: 4,
+                            r: 10,
+                            filter: "drop-shadow(0 2px 4px rgba(59, 130, 246, 0.3))",
+                          }}
+                          activeDot={{
+                            r: 12,
+                            fill: "#2563eb",
+                            stroke: "#ffffff",
+                            strokeWidth: 4,
+                            filter: "drop-shadow(0 4px 8px rgba(37, 99, 235, 0.4))",
+                          }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                ) : (
+                  <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+                    <div className="text-center">
+                      <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No trend data available</p>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
