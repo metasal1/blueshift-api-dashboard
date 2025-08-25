@@ -3,6 +3,8 @@ import type { Metadata } from "next"
 import { Work_Sans, Open_Sans } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Analytics } from "@vercel/analytics/react"
+import { Suspense } from "react"
 
 const workSans = Work_Sans({
   subsets: ["latin"],
@@ -29,19 +31,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${workSans.variable} ${openSans.variable}`}>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              import { inject } from '@vercel/analytics';
-              inject();
-            `,
-          }}
-        />
-      </head>
       <body className="font-sans antialiased">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          {children}
+          <Suspense fallback={null}>
+            {children}
+            <Analytics />
+          </Suspense>
         </ThemeProvider>
       </body>
     </html>
